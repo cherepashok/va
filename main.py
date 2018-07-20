@@ -13,12 +13,17 @@ HOME       = ''
 OUTPUT     = ''
 MODEL_NAME = '{}/models_vf'
 TAGS_FILE  = '{}/misc/feature_tags.csv'
+model_name_list = ['model_C12', 'model_C3', 'model_iC4', 'model_iC5', 'model_nC4', 'model_nC5', 'model_sumC6']
 
 s = sched.scheduler(time.time, time.sleep)
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    #logging.basicConfig(filename='log/va.log',level=logging.info(),format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',filemode='w')
+    logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
     logger = logging.getLogger(__name__)
+
+    generate_targets_tags(model_name_list)
 
     config = configparser.ConfigParser()
     config.read('va_config.ini')
@@ -49,6 +54,7 @@ def main_loop(sc, dc, h):
     prediction(df)
     end = time.time()
     logging.info('Duration - '+str(end - start))
+    #gc.collect()
     s.enter(60, 1, main_loop, (sc,dc,h,))
 
 
@@ -85,7 +91,6 @@ def prediction(tags_data):
     logging.info('Exttraction of new feature - ' + str(end-start))
 
     logging.info('Load model')
-    model_name_list = ['model_C12','model_C3','model_iC4','model_iC5','model_nC4','model_nC5','model_sumC6']
     logging.debug(tags_data_v.index.min())
     logging.debug(tags_data_v.index.max())
 
@@ -93,10 +98,19 @@ def prediction(tags_data):
     val = tags_data_v.loc[tags_data_v.index.max():]
     val = val.values.reshape(1,-1)
 
-    for model in model_name_list:
-        loaded_model = joblib.load(MODEL_NAME.format(HOME)+'/'+model)
-        model_result = loaded_model.predict(val)
-        output_model_result(model,model_result)
+    #logging.info(tags_data.head())
+    #logging.DEBUG(tags_data_v.head())
+
+    try:
+        for model in model_name_list:
+            loaded_model = joblib.load(MODEL_NAME.format(HOME)+'/'+model)
+            model_result = loaded_model.predict(val)
+            output_model_result(model,model_result)
+    except:
+        logging.DEBUG(tags_data_v.head)
+        #logging.ERROR(tags_data_v.head())
+
+        pass
 
 
 def output_model_result(tag,value):
@@ -110,6 +124,16 @@ def output_model_result(tag,value):
     fd.write('Tagname,TimeStamp,Value,DataQuality\n')
     fd.write('{},{},{},Good\r\n'.format(tag, str_tstamp, value[0]))
     fd.close()
+
+def generate_targets_tags(tag_list):
+    header = '[Tags]\n'+'Tagname,Description,DataType\n'
+    body = ''
+    for tag in tag_list:
+        fd = open('{}/{}.csv'.format(OUTPUT, tag), 'w')
+        fd.write(header)
+        body = body + tag + ',predicted tag, DoubleFloat\n'
+        fd.write(body)
+        fd.close()
 
 if __name__ == "__main__":
     main()

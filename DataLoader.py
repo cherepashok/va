@@ -10,26 +10,25 @@ class CircularDataFrame:
     h = Historian()
     DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
     hours = 5
-    # To convert to zulu time
     zulu_shift = 3
     end = datetime.now()
 
-
     def __init__(self,tag_list):
         self.tag_list = tag_list
+        self.token = self.h.get_auth_token()
         self.load_data()
 
     def load_data(self):
-
 
         start = datetime.now() - timedelta(hours = (self.hours + self.zulu_shift))
         logging.debug('Loading data starting at - '+str(start))
 
         self.end = (start + timedelta(hours = self.hours))
+        #self.end.minute
         logging.debug('Loading data ending at - '+str(self.end))
 
-        token = self.h.get_auth_token()
-        self.df = self.h.get_historian_data({'Authorization': 'Bearer ' + token}, self.tag_list,
+
+        self.df = self.h.get_historian_data({'Authorization': 'Bearer ' + self.token}, self.tag_list,
                                        start.strftime(self.DATE_FORMAT), self.end.strftime(self.DATE_FORMAT))
 
 
@@ -39,11 +38,13 @@ class CircularDataFrame:
         start = self.end
         self.end = datetime.now() - timedelta(hours = (self.zulu_shift))
 
+        #str(datetime(self.end.self.year,self.end.self.month,self.end.day,self.end.hour,self.end.minute + 1))
+
         logging.debug('Loading data starting at - '+str(start))
         logging.debug('Loading data ending   at - '+str(self.end))
 
-        token = self.h.get_auth_token()
-        n_df = self.h.get_historian_data_batch({'Authorization': 'Bearer ' + token}, self.tag_list,
+        #token = self.h.get_auth_token()
+        n_df = self.h.get_historian_data_batch({'Authorization': 'Bearer ' + self.token}, self.tag_list,
                                        start.strftime(self.DATE_FORMAT), self.end.strftime(self.DATE_FORMAT))
         self.df = self.df.append(n_df, sort=True)
         logging.debug(self.df.index.min())

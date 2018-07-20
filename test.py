@@ -102,3 +102,24 @@ for model in model_name_list:
 #
 # OUTPUT = '/Users/dumbfly/PycharmProjects/himtech/output'
 # output_model_result('kvakva',[0.5])
+
+
+# end = datetime.now()
+# print(end)
+# end = datetime(end.year,end.month,end.day,end.hour,end.minute + 1)
+# print(end)
+
+
+def generate_targets_tags(tag_list):
+
+    header = '[Tags]\n'+'Tagname,Description,DataType\n'
+    body = ''
+    for tag in tag_list:
+        OUTPUT = '.'
+        fd = open('{}/{}.csv'.format(OUTPUT, tag), 'w')
+        fd.write(header)
+        body = body + tag + ',predicted tag, DoubleFloat\n'
+        fd.write(body)
+        fd.close()
+
+generate_targets_tags(['target_tag_1', 'target_tag_2'])
