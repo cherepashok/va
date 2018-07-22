@@ -18,12 +18,12 @@ model_name_list = ['model_C12', 'model_C3', 'model_iC4', 'model_iC5', 'model_nC4
 s = sched.scheduler(time.time, time.sleep)
 
 def main():
-    #logging.basicConfig(filename='log/va.log',level=logging.info(),format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',filemode='w')
-    logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(filename='log/va.log',level=logging.DEBUG,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',filemode='w')
+    #logging.basicConfig(level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     logger = logging.getLogger(__name__)
 
-    generate_targets_tags(model_name_list)
+
 
     config = configparser.ConfigParser()
     config.read('va_config.ini')
@@ -31,6 +31,8 @@ def main():
     HOME = config['DEFAULT']['HOME']
     global OUTPUT
     OUTPUT = config['DEFAULT']['OUTPUT']
+
+    generate_targets_tags(model_name_list)
 
     tags = pd.read_csv(TAGS_FILE.format(HOME))
     h = Historian()
@@ -81,36 +83,37 @@ def prediction(tags_data):
     #tags_data = tags_data[
     #    tags_data.columns[tags_data.count() > NA_THRESHOLD * tags_data.shape[0]]]
 
+    'Check for duplicates'
+    assert len(set(tags_data.index.duplicated())) == 1
+
     DEFAULT_LAGS = [2, 15, 30, 60, 90, 120]
     logging.info('New feature calculation')
     start = time.time()
 
     tags_data_v = chrom_feature_extract(tags_data, trend_lags=DEFAULT_LAGS)
+
     end = time.time()
 
     logging.info('Exttraction of new feature - ' + str(end-start))
 
+    logging.debug('tags_data   shape - ' + str(tags_data.shape))
+    logging.debug('tags_data_v shape - ' + str(tags_data_v.shape))
+
+    assert tags_data.shape[0] == tags_data_v.shape[0]
+
     logging.info('Load model')
-    logging.debug(tags_data_v.index.min())
-    logging.debug(tags_data_v.index.max())
 
     # Some magic to prepare values to predictor
     val = tags_data_v.loc[tags_data_v.index.max():]
     val = val.values.reshape(1,-1)
 
-    #logging.info(tags_data.head())
-    #logging.DEBUG(tags_data_v.head())
+    assert len(val[0]) == 1393
 
-    try:
-        for model in model_name_list:
-            loaded_model = joblib.load(MODEL_NAME.format(HOME)+'/'+model)
-            model_result = loaded_model.predict(val)
-            output_model_result(model,model_result)
-    except:
-        logging.DEBUG(tags_data_v.head)
-        #logging.ERROR(tags_data_v.head())
 
-        pass
+    for model in model_name_list:
+        loaded_model = joblib.load(MODEL_NAME.format(HOME)+'/'+model)
+        model_result = loaded_model.predict(val)
+        output_model_result(model,model_result)
 
 
 def output_model_result(tag,value):
@@ -122,13 +125,14 @@ def output_model_result(tag,value):
     fd = open('{}/{}.csv'.format(OUTPUT, tag), 'w')
     fd.write('[Data]\n')
     fd.write('Tagname,TimeStamp,Value,DataQuality\n')
-    fd.write('{},{},{},Good\r\n'.format(tag, str_tstamp, value[0]))
+    fd.write('{},{},{},Good\n'.format(tag, str_tstamp, value[0]))
     fd.close()
 
 def generate_targets_tags(tag_list):
     header = '[Tags]\n'+'Tagname,Description,DataType\n'
     body = ''
     for tag in tag_list:
+        #print('{}/{}.csv'.format(OUTPUT, tag))
         fd = open('{}/{}.csv'.format(OUTPUT, tag), 'w')
         fd.write(header)
         body = body + tag + ',predicted tag, DoubleFloat\n'

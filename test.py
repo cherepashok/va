@@ -6,6 +6,7 @@ import numpy as np
 from Historian import Historian
 import sched, time
 from datetime import datetime
+from datetime import timedelta
 
 
 from sklearn.externals import joblib
@@ -40,7 +41,7 @@ def load_data(tag_list):
 
 df = load_data(['TN.01','TN.02','TN.03'])
 
-ndf = pd.DataFrame({'TN.01':[1],'TN.02':[2],'TN.03':[3],'TN.04':[0]}, index = ['2016-08-08 15:41:00'])
+ndf = pd.DataFrame({'TN.01':[1],'TN.02':[2],'TN.03':[3],'TN.04':[0]}, index = ['2016-08-08 15:40:00'])
 ndf.index = pd.DatetimeIndex(ndf.index)
 
 df = df.append(ndf,sort=True)
@@ -49,10 +50,13 @@ values = df.loc[df.index.max():]
 print(df)
 print(values.values.reshape(1,-1))
 
+
 print('load model')
 model_name_list = ['model_C12', 'model_C3', 'model_iC4', 'model_iC5', 'model_nC4', 'model_nC5', 'model_sumC6']
 
-values = [i for i in range(1,7*199 + 1)]
+values = [np.NaN for i in range(1,7*199 + 1)]
+
+print(values)
 
 for model in model_name_list:
     print(model)
@@ -69,8 +73,12 @@ for model in model_name_list:
 #print(df)
 #df = df.drop([df.index.min()])
 #df.drop(df.index.min().strftime(DATE_FORMAT))
-#print(df)
+print(df.index.max())
 
+ts = df.index.max()
+end = datetime.now()
+print((end - ts) > timedelta(minutes = 5))
+pass
 # l = {'a':'123','b':'456'}
 # print(l)
 # print(l.items())
@@ -109,17 +117,6 @@ for model in model_name_list:
 # end = datetime(end.year,end.month,end.day,end.hour,end.minute + 1)
 # print(end)
 
-
-def generate_targets_tags(tag_list):
-
-    header = '[Tags]\n'+'Tagname,Description,DataType\n'
-    body = ''
-    for tag in tag_list:
-        OUTPUT = '.'
-        fd = open('{}/{}.csv'.format(OUTPUT, tag), 'w')
-        fd.write(header)
-        body = body + tag + ',predicted tag, DoubleFloat\n'
-        fd.write(body)
-        fd.close()
-
-generate_targets_tags(['target_tag_1', 'target_tag_2'])
+#print(df)
+print('duppl - ' + str(len(set(df.index.duplicated()))))
+#print(df.resample('1Min').last())

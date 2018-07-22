@@ -41,7 +41,7 @@ class Historian:
     def get_historian_data_batch(self, auth_token, tag_list, start, end):
         df = pd.DataFrame()
         json_data = self.get_json(auth_token, end, start, tag_list)
-        logging.debug(json_data)
+        #logging.debug(json_data)
         # try:
         if 'Data' in json_data:
             for tag_data in json_data['Data']:
@@ -60,13 +60,14 @@ class Historian:
     def get_historian_data(self, auth_token, tag_list, start, end):
         df = pd.DataFrame()
         for tag in tag_list:
-            logging.info('Loading %s data',tag)
+            #logging.info('Loading %s data',tag)
             json_data = self.get_json(auth_token, end, start, [tag])
 
             if 'Data' in json_data:
                 for tag_data in json_data['Data']:
-                    logging.debug(tag_data)
+                    #logging.debug(tag_data)
                     values = self.get_tag_series(tag_data)
+
                     df = self.add_values_to(df, tag_data, values)
             else:
                 logging.debug(json_data)
