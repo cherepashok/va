@@ -1,3 +1,4 @@
-[Data]
-Tagname,TimeStamp,Value,DataQuality
-model_C3,07/22/18 22:08:20,0.38523510532527144,Good
+[Tags]
+Tagname,Description,DataType
+model_C12,predicted tag, DoubleFloat
+model_C3,predicted tag, DoubleFloat

@@ -8,6 +8,7 @@ import time
 import sched
 import logging
 import configparser
+import os
 
 HOME       = ''
 OUTPUT     = ''
@@ -18,22 +19,18 @@ model_name_list = ['model_C12', 'model_C3', 'model_iC4', 'model_iC5', 'model_nC4
 s = sched.scheduler(time.time, time.sleep)
 
 def main():
+
     logging.basicConfig(filename='log/va.log',level=logging.DEBUG,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',filemode='w')
     #logging.basicConfig(level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
     logger = logging.getLogger(__name__)
-
-
-
     config = configparser.ConfigParser()
     config.read('va_config.ini')
     global HOME
     HOME = config['DEFAULT']['HOME']
     global OUTPUT
     OUTPUT = config['DEFAULT']['OUTPUT']
-
+    save_pid()
     generate_targets_tags(model_name_list)
-
     tags = pd.read_csv(TAGS_FILE.format(HOME))
     h = Historian()
     logger.info('Initial data collection')
@@ -60,8 +57,7 @@ def main_loop(sc, dc, h):
     s.enter(60, 1, main_loop, (sc,dc,h,))
 
 
-def chrom_feature_extract(data,
-                          trend_lags=[10, 30, 50, 70]):
+def chrom_feature_extract(data, trend_lags=[10, 30, 50, 70]):
     """Feature Extraction for chrom data.
     Trends and lagged previous values.
     Returns new DataFrame"""
@@ -127,6 +123,12 @@ def output_model_result(tag,value):
     fd.write('Tagname,TimeStamp,Value,DataQuality\n')
     fd.write('{},{},{},Good\n'.format(tag, str_tstamp, value[0]))
     fd.close()
+
+def save_pid():
+    fd = open('{}/{}/va_pid'.format(HOME,'misc'), 'w')
+    fd.write(str(os.getpid()))
+    fd.close()
+
 
 def generate_targets_tags(tag_list):
     header = '[Tags]\n'+'Tagname,Description,DataType\n'

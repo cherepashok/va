@@ -59,21 +59,27 @@ class Historian:
 
     def get_historian_data(self, auth_token, tag_list, start, end):
         df = pd.DataFrame()
+        batch = []
+
         for tag in tag_list:
             #logging.info('Loading %s data',tag)
-            json_data = self.get_json(auth_token, end, start, [tag])
+            batch.append(tag)
+            # if tag != tag_list[-1] and len(batch) < batch_size:
+            #     continue
+            json_data = self.get_json(auth_token, end, start, batch)
 
             if 'Data' in json_data:
                 for tag_data in json_data['Data']:
                     #logging.debug(tag_data)
                     values = self.get_tag_series(tag_data)
-
                     df = self.add_values_to(df, tag_data, values)
             else:
                 logging.debug(json_data)
 
-            if df.empty != True:
-                df = self.purge(df)
+            batch.clear()
+
+        if df.empty != True:
+            df = self.purge(df)
         return df
 
 
